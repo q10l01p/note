@@ -1,0 +1,28 @@
+Long Short Term Memory networks – usually just called “LSTMs” – are a special kind of RNN, capable of learning long-term dependencies. They were introduced by \href{http://www.bioinf.jku.at/publications/older/2604.pdf}{Hochreiter \& Schmidhuber (1997)}, and were refined and popularized by many people in following work\footnote{In addition to the original authors, a lot of people contributed to the modern LSTM. A non-comprehensive list is: Felix Gers, Fred Cummins, Santiago Fernandez, Justin Bayer, Daan Wierstra, Julian Togelius, Faustino Gomez, Matteo Gagliolo, and Alex Graves.}. They work tremendously well on a large variety of problems, and are now widely used.
+
+LSTMs are explicitly designed to avoid the long-term dependency problem. Remembering information for long periods of time is practically their default behavior, not something they struggle to learn!
+
+All recurrent neural networks have the form of a chain of repeating modules of neural network. In standard RNNs, this repeating module will have a very simple structure, such as a single tanh layer.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{fig/4.png}
+	\caption{The repeating module in a standard RNN contains a single layer.}
+\end{figure}
+
+LSTMs also have this chain like structure, but the repeating module has a different structure. Instead of having a single neural network layer, there are four, interacting in a very special way.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{fig/5.png}
+	\caption{The repeating module in an LSTM contains four interacting layers.}
+\end{figure}
+
+Don’t worry about the details of what’s going on. We’ll walk through the LSTM diagram step by step later. For now, let’s just try to get comfortable with the notation we’ll be using.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{fig/6.png}
+\end{figure}
+
+In the above diagram, each line carries an entire vector, from the output of one node to the inputs of others. The pink circles represent pointwise operations, like vector addition, while the yellow boxes are learned neural network layers. Lines merging denote concatenation, while a line forking denote its content being copied and the copies going to different locations.

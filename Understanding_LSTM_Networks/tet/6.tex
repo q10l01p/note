@@ -1,0 +1,29 @@
+What I’ve described so far is a pretty normal LSTM. But not all LSTMs are the same as the above. In fact, it seems like almost every paper involving LSTMs uses a slightly different version. The differences are minor, but it’s worth mentioning some of them.
+
+One popular LSTM variant, introduced by \href{ftp://ftp.idsia.ch/pub/juergen/TimeCount-IJCNN2000.pdf}{Gers \& Schmidhuber (2000)}, is adding “peephole connections.” This means that we let the gate layers look at the cell state.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{fig/12.png}
+\end{figure}
+
+The above diagram adds peepholes to all the gates, but many papers will give some peepholes and not others.
+
+Another variation is to use coupled forget and input gates. Instead of separately deciding what to forget and what we should add new information to, we make those decisions together. We only forget when we’re going to input something in its place. We only input new values to the state when we forget something older.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{fig/13.png}
+\end{figure}
+
+A slightly more dramatic variation on the LSTM is the Gated Recurrent Unit, or GRU, introduced by \href{http://arxiv.org/pdf/1406.1078v3.pdf}{Cho, et al. (2014)}. It combines the forget and input gates into a single “update gate.” It also merges the cell state and hidden state, and makes some other changes. The resulting model is simpler than standard LSTM models, and has been growing increasingly popular.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{fig/14.png}
+\end{figure}
+
+These are only a few of the most notable LSTM variants. There are lots of others, like Depth Gated RNNs by \href{http://arxiv.org/pdf/1508.03790v2.pdf}{Yao, et al. (2015)}. There’s also some completely different approach to tackling long-term dependencies, like Clockwork RNNs by \href{http://arxiv.org/pdf/1402.3511v1.pdf}{Koutnik, et al. (2014)}.
+
+Which of these variants is best? Do the differences matter? \href{http://arxiv.org/pdf/1503.04069.pdf}{Greff, et al. (2015)} do a nice comparison of popular variants, finding that they’re all about the same. \href{http://jmlr.org/proceedings/papers/v37/jozefowicz15.pdf}{Jozefowicz, et al. (2015)} tested more than ten thousand RNN architectures, finding some that worked better than LSTMs on certain tasks.
+
