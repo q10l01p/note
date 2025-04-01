@@ -1,0 +1,201 @@
+To succesfully train a quadruped robot to walk in a RL environment, we need to define the following key components:
+
+\begin{itemize}
+	\item Actions: Depending on the robot's configuration, the actions can be the motor positions that the robot needs to achieve to move accordingly, or torques that the robot needs to apply to its joints. In our case, we will use motor positions as actions.
+	\item Observations: The observations represent all the information that the robot can measure or estimate using sensors or sensor fusion techniques. The design of the observation space is crucial for the learning algorithm, as it provides the necessary context for the model to perform effectively.
+	\item Reward Design: The reward function is designed to guide the robot to walk effectively while adhering to user-specified references for speed and altitude. Rewards are given for achieving objectives, and penalties are applied when deviations occur.
+	\item Episode Termination Condition: Episodes are terminated when specific criteria are met to ensure the robot remains in a healthy and functional state.
+\end{itemize}
+
+\begin{tabular}{ll}
+	\hline
+	\textbf{Ingredient} & \textbf{Role} \\
+	\hline
+	Environment         & Simulated or real-world space with physical constraints \\
+	State               & Observations (joint angles, velocities, etc.) that define the robot’s condition \\
+	Action              & Motor commands driving each joint                     \\
+	Reward Function     & Guides stable and efficient locomotion behaviors      \\
+	RL Framework        & Algorithm for training (e.g., PPO), updating control policy \\
+	\hline
+\end{tabular}
+
+\subsection{Actions}
+
+The quadruped robot is equipped with 3 motors per leg, each controlled via position control. This setup results in a 12-dimensional action space, where each dimension corresponds to the reference position for one motor.
+
+To simplify the learning process and `assist' the neural network, we opted to structure the action space as a residual added to a predefined homing position. The homing position represents the robot's default standing posture, with the legs arranged to ensure balance and stability. Instead of directly outputting absolute motor positions, the neural network predicts a residual adjustment relative to this homing posture.
+
+This approach has two key benefits:
+\begin{itemize}
+	\item Simplified Exploration: By constraining the network’s output to modify a stable baseline, the agent can focus on learning meaningful deviations, reducing the search space for valid actions.
+	\item Enhanced Stability: The homing position acts as a natural fallback, preventing erratic movements during the early stages of training when the policy is still unrefined.
+\end{itemize}
+
+Here’s the implementation of the action transformation:
+\begin{pythoncode}
+	action_total = self.q_homing + residual_action_nn
+\end{pythoncode}
+
+\subsection{Observations}
+
+The observation space represents all the information that the robot can measure or estimate using sensors or sensor fusion techniques. This data is essential for the robot to understand its current situation, allowing it to make informed decisions and take the appropriate actions. A well-defined observation space is critical for the learning algorithm, as it provides the necessary context for the model to perform effectively.
+
+In our case, the robot's observation space will be composed of both the robot's internal states and external inputs (i.e. user commands).
+
+The main components of the observation space taking into account internal states are as follows:
+\begin{itemize}
+	\item \textbf{Base Linear Velocities}: $v_x$, $v_y$, $v_z$
+	\item \textbf{Base Rotational Velocities}: $\omega_x$, $\omega_y$, $\omega_z$
+	\item \textbf{Orientation Angles}: \textit{roll}, \textit{pitch}
+	\item \textbf{Joint Positions}: $q_{1..12}$
+	\item \textbf{Joint Velocities}: $\dot{q}_{1..12}$
+	\item \textbf{Previous Actions}: $a_{t-1}$
+\end{itemize}
+
+In addition to the robot's internal state, user commands are also incorporated into the observation space to allow for manual control, where an operator moves the robot through a joystick. Thus, the observation space will be enlarged with the following user command inputs:
+\begin{itemize}
+	\item \textbf{Reference Velocities}: $v^{ref}_{x}$, $v^{ref}_{y}$, $w^{ref}_{z}$
+	\item \textbf{Reference Robot Altitude}: $z_{ref}$
+\end{itemize}
+With all these components combined, the final observation space is of the following dimensionality: $\mathbb{R}^{48}$
+
+\subsection{Reward Design}
+
+The goal of the reward design is to guide the robot to walk effectively while adhering to user-specified references for speed and altitude. In reinforcement learning, the agent is encouraged to maximize its cumulative reward, which is designed to reflect the desired behavior. Rewards are given for achieving objectives, and penalties are applied when deviations occur. Below, we outline the specific reward terms used in our implementation, based on the provided code.
+
+\subsubsection{Linear Velocity Tracking Reward}
+
+The robot is encouraged to track $v_x, v_y$ references commanded by the user.
+\[
+R_{\text{lin\_vel}} = \exp\left[-\|v^{ref}_{xy} - v_{xy}\|^2\right]
+\]
+Where:
+\begin{itemize}
+	\item $v^{ref}_{xy} = [v^{ref}_{x}, v^{ref}_{y}]$ is the commanded velocity.
+	\item $v_{xy} = [v_x, v_y]$ is the actual velocity.
+\end{itemize}
+
+\subsubsection{Angular Velocity Tracking Reward}
+
+The robot is encouraged to track $w_z$ reference commanded by the user.
+\[
+R_{\text{ang\_vel}} = \exp\left[-(w^{ref}_{z} - w_{z})^2\right]
+\]
+Where:
+\begin{itemize}
+	\item $w_{\text{cmd},z}$ is the commanded yaw velocity.
+	\item $w_{\text{base},z}$ is the actual yaw velocity.
+\end{itemize}
+
+\subsubsection{Height Penalty}
+
+The robot is encouraged to maintain a desired height as specified by the commanded altitude. A penalty is applied for deviations from this target height:
+\[
+R_{z} = (z - z_{\text{ref}})^2
+\]
+Where:
+\begin{itemize}
+	\item $z$ is the current base height.
+	\item $z_{\text{ref}}$ is the target height specified in the commands.
+\end{itemize}
+
+\subsubsection{Pose Similarity Reward}
+
+To keep the robot's joint poses close to a default configuration, a penalty is applied for large deviations from the default joint positions:
+\[
+R_{\text{pose\_similarity}} = \|q - q_{\text{default}}\|^2
+\]
+Where:
+\begin{itemize}
+	\item $q$ is the current joint position.
+	\item $q_{\text{default}}$ is the default joint position.
+\end{itemize}
+
+\subsubsection{Action Rate Penalty}
+
+To ensure smooth control and discourage abrupt changes in actions, a penalty is applied based on the difference between consecutive actions:
+\[
+R_{\text{action\_rate}} = \|a_{t} - a_{t-1}\|^2
+\]
+Where:
+\begin{itemize}
+	\item $a_t$ and $a_{t-1}$ are the actions at the current and previous time steps, respectively.
+\end{itemize}
+
+\subsubsection{Vertical Velocity Penalty}
+
+To discourage unnecessary movement along the vertical ($z$) axis, a penalty is applied to the squared $z$-axis velocity of the base when the robot is not actively jumping. The reward is:
+\[
+R_{\text{lin\_vel\_z}} = v_{z}^2
+\]
+Where:
+\begin{itemize}
+	\item $v_{z}$ is the vertical velocity of the base.
+\end{itemize}
+
+\subsubsection{Roll and Pitch Stabilization Penalty}
+
+To ensure the robot maintains stability, a penalty is applied to discourage large roll and pitch deviations of the base. This reward is:
+\[
+R_{\text{roll\_pitch}} = \text{roll}^2 + \text{pitch}^2
+\]
+Where:
+\begin{itemize}
+	\item $\text{roll}$ is the roll angle of the base.
+	\item $\text{pitch}$ is the pitch angle of the base.
+\end{itemize}
+
+This design ensures that the robot learns a balanced policy that prioritizes tracking commands, maintaining stability, and acting smoothly while adhering to physical constraints.
+
+\subsection{Episode termination condition}
+
+During training, episodes are terminated when specific criteria are met to ensure the robot remains in a healthy and functional state. The termination conditions include:
+
+\begin{itemize}
+	\item $|\textit{roll}| < \textit{roll}_{\textit{min}}$: Robot roll is below a certain threshold.
+	\item $|\textit{pitch}| < \textit{pitch}_{\textit{min}}$: Robot pitch is below a certain threshold.
+	\item $z > z_{\textit{min}}$: Robot altitude is above a minimum value.
+	\item $\textit{steps} \geq \textit{max\_steps}$: Maximum number of steps reached.
+\end{itemize}
+
+Here is an implementation for checking whether the robot is in a healthy state:
+\begin{pythoncode}
+	# check whether robot current state is healthy
+	def is_healthy(self, obs, curr_step):
+			roll = obs[6]
+			pitch = obs[7]
+			z = obs[2]
+		
+			if (abs(roll)>self.roll_th or abs(pitch)>pitch_th or abs(z) < self.z_min or curr_step > 	self.max_steps):
+					return False # dead
+			else:
+					return True # alive
+\end{pythoncode}
+
+\subsection{Reset}
+
+Whenever a termination condition is met, the episode must be reset, and the robot should start over from the initial state. To encourage exploration and avoid overfitting, some randomness is introduced when reinitializing the robot's starting position.
+
+Specifically, the initial joint positions and velocities are perturbed by adding small random noise:
+\begin{equation*}
+	\begin{aligned}
+	q_{\mathrm{pos}} = q_{\mathrm{pos\_init}} + \mathrm{rand}(\mathrm{low}_{\mathrm{pos}}, \mathrm{high}_{\mathrm{pos}})
+	\\
+	q_{\mathrm{vel}} = q_{\mathrm{vel\_init}} + \mathrm{rand}(\mathrm{low}_{\mathrm{vel}}, \mathrm{high}_{\mathrm{vel}})
+	\end{aligned}
+\end{equation*}
+Where:
+\begin{itemize}
+	\item $q_{\mathrm{pos}}$: Robot base pose and joint positions after reset.
+	\item $q_{\mathrm{vel}}$: Robot base velocities and joint velocities after reset.
+	\item $\mathrm{rand}(\mathrm{low}, \mathrm{high})$: Uniform random noise between $\mathrm{low}$ and $\mathrm{high}$.
+	\item $q_{\mathrm{pos\_init}}$: Default positions.
+	\item $q_{\mathrm{vel\_init}}$: Default velocities.
+\end{itemize}
+
+Here is the code snippet for implementing this reset logic:
+\begin{pythoncode}
+# re-initialize robot after reset
+qpos = self.qpos_init_sim + self.np_random.uniform(low=noise_pos_low, high=noise_pos_high, size=self.model.nq) 
+qvel = self.qvel_init_sim + self.np_random.uniform(low=noise_vel_low, high=noise_vel_high, size=self.model.nv)
+\end{pythoncode}

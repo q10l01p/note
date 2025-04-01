@@ -1,0 +1,96 @@
+\documentclass[en,hazy5,blue,11pt,normal]{elegantnote}
+
+\usepackage[most]{tcolorbox}  % 添加 [most] 或手动指定必要库
+
+\usepackage{graphicx}    % 导入图形插入宏包
+\usepackage{subcaption}  % 导入子图宏包
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{amssymb}
+
+\newtcolorbox{highlightbox}[1][gray!15!white]{  % 默认灰色，但可覆盖
+	colback=#1,       % 使用参数作为背景色
+	boxrule=0pt,              % 移除边框线（宽度设为 0）
+	arc=2mm,                  % 四角的圆角弧度（可根据需求调整大小）
+	breakable,                % 允许跨页
+	% 如果需要，可以添加以下可选配置：
+	% left=0mm,right=0mm, % 调整内容与框内边距（默认）
+	% sharp corners=n orthodox    % 仅上/下角圆角（可选）
+}
+
+
+% 定义颜色
+\definecolor{codebg}{gray}{0.92}      % 浅灰色背景 (20% 灰色混白色)
+\definecolor{keywordcolor}{RGB}{229, 83, 0} % 橙色高亮关键词 (self.q_homing 部分)
+\definecolor{stringcolor}{RGB}{42, 161, 152} % 示例: 字符串高亮颜色
+\definecolor{commentcolor}{gray}{0.5} % 灰色注释
+
+% 自定义 listings 样式
+\lstdefinestyle{customPython}{
+	basicstyle=\ttfamily\small,        % 设置等宽字体和字体大小
+	keywordstyle=\color{keywordcolor},% 关键字颜色
+	commentstyle=\color{commentcolor},% 注释颜色
+	stringstyle=\color{stringcolor},  % 字符串颜色
+	showstringspaces=false,           % 不显示空格符号
+	breaklines=true,                  % 长代码自动换行
+}
+
+% 使用 tcolorbox 定义自定义代码背景样式
+\newtcblisting{pythoncode}{
+	colback=codebg,       % 背景颜色
+	colframe=white,       % 边框颜色 (设为白色，即无任何边框线)
+	boxrule=0pt,          % 边框宽度 (设为 0)
+	arc=2mm,              % 圆角半径 (可调整大小如 arc=2mm 或 arc=6mm)
+	left=5pt,             % 内缩 (代码左侧边距)
+	right=5pt,            % 内缩 (代码右侧边距)
+	top=0pt,              % 上内边距
+	bottom=0pt,           % 下内边距
+	listing only,         % 使用 listings 内容
+	listing options={style=customPython}, % 调用定义的代码样式
+}
+
+\title{\href{https://github.com/Argo-Robot/quadrupeds_locomotion}{Making Quadrupeds Learning to Walk: From Zero to Hero}}
+
+\author{Federico Sarrocco \qquad Leonardo Bertelli}
+	
+%\version{2.50}
+%\date{Dec. 31, 2022}
+
+\begin{document}
+\maketitle
+
+\begin{highlightbox}[gray!5!white]
+	Learn how to train a quadruped robot to walk using reinforcement learning, from defining actions and observations to designing rewards and transitioning from simulation to reality.
+\end{highlightbox}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{fig/screenshot001}
+	\label{fig:screenshot001}
+\end{figure}
+
+Mobile robotics has reached a huge turning point. Thanks to the development and improvment of parallel computation and deep learning, robots are now able to learn complex tasks such as walking, running and jumping. The applications are endless, such as: ispection, search-and-rescue missions, entertainment and even healthcare.
+
+\begin{highlightbox}
+	Tasks that were once considered impossible for robots are now within reach, and the possibilities are endless. It's just a matter of time before we see robots performing tasks that were once only possible in science fiction.
+\end{highlightbox}
+
+In this article, we will guide you through the process of training a quadruped robot to walk using reinforcement learning. We will cover the control policy, actions, observations, reward design, training process, and the transition from simulation to reality. By the end of this guide, you will have a solid understanding of the key components involved in training a quadruped robot to walk!
+
+\section{Problem Overview}
+\input{tet/P_O}
+
+\section{Ingredients and RL Framework}
+\input{tet/I_R}
+
+\section{Learning to Walk}
+\input{tet/L_W}
+
+\section{Training Process}
+\input{tet/T_P}
+
+\section{From Simulation to Reality}
+\input{tet/S_L}
+
+
+\end{document}

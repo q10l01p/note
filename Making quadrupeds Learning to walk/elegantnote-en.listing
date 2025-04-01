@@ -1,0 +1,7 @@
+	# Perform randomization
+	env_friction = np.random.uniform(self.min_env_friction, self.max_env_friction)
+	latency = np.random.uniform(self.min_latency, self.max_latency)
+	mass = np.random.uniform(self.min_mass, self.max_mass)
+	IMU_bias = np.random.uniform(self.min_IMU_bias, self.max_IMU_bias)
+	IMU_std = np.random.uniform(self.min_IMU_std, self.max_IMU_std)
+	ext_force = generate_random_force(modulus, direction, duration)

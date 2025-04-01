@@ -1,0 +1,40 @@
+Reinforcement Learning (RL) formulates the control problem as a Markov Decision Process (MDP), where an agent interacts with an environment to maximize long-term rewards. The objective is to learn an optimal policy $\pi(a | s)$ that selects actions based on observations to maximize the expected cumulative reward over time.
+
+The objective function in RL is:
+\[ J(\theta) = \mathbb{E}_{\tau \sim \pi_{\theta}} \left[ \sum_{t=0}^{T} \gamma^t r_t \right] \]
+where:
+\begin{itemize}
+	\item $\theta$ are the policy parameters,
+	\item $\tau$ is the trajectory sampled from the policy $\pi_{\theta}$,
+	\item $\gamma \in (0,1]$ is the discount factor,
+	\item $r_t$ is the reward at timestep $t$.
+\end{itemize}
+
+A typical RL loop using a simulator follows this structure:
+\begin{pythoncode}
+	# agent interacting with the environment
+	for episode in range(num_episodes):
+			obs = env.reset()
+			done = False
+			while not done:
+					action = policy(obs)
+					obs, reward, done, info = env.step(action)
+\end{pythoncode}
+
+\subsection{PPO Algorithm Overview}
+Proximal Policy Optimization (PPO) is a widely used \textbf{on-policy} RL algorithm that improves policy learning by preventing overly large updates. It builds on policy gradient methods but introduces a clipping mechanism to ensure stable training.
+
+\begin{highlightbox}
+\textbf{On-Policy:} The agent learns by following and improving the same policy used to generate data. This means the policy is continuously updated based on its own experiences, leading to stable but sometimes slower learning compared to off-policy methods.
+\end{highlightbox}
+
+The key idea in PPO is to optimize the policy by maximizing a clipped objective:
+\[ L^{CLIP}(\theta) = \mathbb{E} \left[ \min(r_t(\theta) A_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t) \right] \]
+where:
+\begin{itemize}
+	\item $r_t(\theta) = \frac{\pi_{\theta}(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}$ is the probability ratio between the new and old policies.
+	\item $A_t$ is the advantage function, which estimates how much better an action is compared to the expected return.
+	\item $\epsilon$ is a small clipping parameter that prevents large policy updates.
+\end{itemize}
+
+By clipping the probability ratio, PPO avoids excessive divergence from the previous policy, leading to more stable and reliable learning.
